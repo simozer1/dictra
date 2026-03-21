@@ -6,7 +6,6 @@
     <title>Dicta PRO</title>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -35,18 +34,20 @@
         }
 
         textarea {
-            width: 100%; height: 350px; background-color: #1a1a1a; color: #ffffff;
+            width: 100%; height: 380px; background-color: #1a1a1a; color: #ffffff;
             border: 1px solid #333; border-radius: 15px; padding: 18px; font-size: 1.15rem;
             resize: none; line-height: 1.7; outline: none; border-bottom: 4px solid #00d1b2;
         }
 
-        .action-btns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        /* تعديل تقسيم الأزرار لتصبح زرين فقط بشكل متناسق */
+        .action-btns { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
         .action-btn {
             background-color: #222; color: #fff; border: 1px solid #444;
-            padding: 15px; border-radius: 12px; font-size: 0.85rem; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; gap: 5px;
+            padding: 15px; border-radius: 12px; font-size: 1rem; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
             font-weight: bold; transition: 0.2s;
         }
+        .action-btn:active { transform: scale(0.95); background: #333; }
 
         #toast {
             visibility: hidden; min-width: 220px; background-color: #00d1b2; color: #000;
@@ -60,7 +61,7 @@
         .modal-btn-confirm { background: #ff3860; color: white; border: none; padding: 12px; border-radius: 10px; cursor: pointer; width: 45%; margin: 5px; font-weight: bold; }
         .modal-btn-cancel { background: #444; color: white; border: none; padding: 12px; border-radius: 10px; cursor: pointer; width: 45%; margin: 5px; }
 
-        select { background: #1a1a1a; color: white; border: 1px solid #444; padding: 14px; border-radius: 12px; width: 100%; outline: none; text-align: center; margin-bottom: 10px; }
+        select { background: #1a1a1a; color: white; border: 1px solid #444; padding: 14px; border-radius: 12px; width: 100%; outline: none; text-align: center; margin-bottom: 10px; font-size: 1rem; }
         
         @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 40px; opacity: 1;} }
         @keyframes fadeout { from {bottom: 40px; opacity: 1;} to {bottom: 0; opacity: 0;} }
@@ -97,9 +98,8 @@
         <textarea id="resultText" placeholder="تحدث بوضوح..."></textarea>
 
         <div class="action-btns">
-            <button onclick="copyToClipboard()" class="action-btn"><i class="fas fa-copy"></i> نسخ</button>
-            <button onclick="exportToPDF()" class="action-btn"><i class="fas fa-file-pdf"></i> PDF</button>
-            <button onclick="showConfirm()" class="action-btn" style="color:#ff3860; border-color:#ff3860;"><i class="fas fa-trash"></i> مسح</button>
+            <button onclick="copyToClipboard()" class="action-btn"><i class="fas fa-copy"></i> نسخ النص</button>
+            <button onclick="showConfirm()" class="action-btn" style="color:#ff3860; border-color:#ff3860;"><i class="fas fa-trash"></i> مسح الكل</button>
         </div>
     </div>
 
@@ -114,7 +114,6 @@
         let isRecording = false;
         let finalTranscript = "";
 
-        // تهيئة محرك الكلام
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if (SpeechRecognition) {
             recognition = new SpeechRecognition();
@@ -127,7 +126,6 @@
                     const transcriptPiece = event.results[i][0].transcript.trim();
                     
                     if (event.results[i].isFinal) {
-                        // الحل الجذري للتكرار: فحص آخر كلمة مضافة فعلياً
                         let currentWords = finalTranscript.trim().split(/\s+/);
                         let lastWord = currentWords[currentWords.length - 1];
                         
@@ -146,7 +144,7 @@
                 isRecording = true;
                 recordBtn.classList.add('recording');
                 recordBtn.innerHTML = '<i class="fas fa-stop"></i>';
-                statusText.innerText = "جاري الاستماع...";
+                statusText.innerText = "جاري الاستماع الآن...";
                 finalTranscript = resultText.value;
             };
 
@@ -161,7 +159,6 @@
             };
 
             recognition.onerror = (e) => {
-                console.error(e.error);
                 if(e.error === 'no-speech') showToast("لم يتم اكتشاف صوت");
             };
         }
@@ -184,7 +181,7 @@
         }
 
         function copyToClipboard() {
-            if (!resultText.value) return;
+            if (!resultText.value.trim()) { showToast("الصندوق فارغ!"); return; }
             resultText.select();
             document.execCommand('copy');
             showToast("تم النسخ بنجاح ✨");
@@ -204,31 +201,7 @@
             resultText.value = "";
             finalTranscript = "";
             hideConfirm();
-            showToast("تم المسح");
-        }
-
-        // إصلاح مشكلة إغلاق التطبيق عند تحميل PDF
-        function exportToPDF() {
-            if (!resultText.value) { showToast("الصندوق فارغ!"); return; }
-            try {
-                const { jsPDF } = window.jspdf;
-                const doc = new jsPDF();
-                
-                // تقسيم النص لضمان عدم خروجه من الورقة
-                const splitText = doc.splitTextToSize(resultText.value, 180);
-                doc.text(splitText, 10, 10);
-                
-                // استخدام Blob لفتح الملف بدلاً من التنزيل المباشر الذي قد يعطل WebView
-                const pdfBlob = doc.output('blob');
-                const blobUrl = URL.createObjectURL(pdfBlob);
-                
-                // محاولة فتح الملف في نافذة جديدة أو إبلاغ المستخدم
-                window.open(blobUrl, '_blank');
-                showToast("جاري معالجة الملف...");
-            } catch (err) {
-                console.error(err);
-                showToast("حدث خطأ في إنشاء PDF");
-            }
+            showToast("تم مسح النص");
         }
     </script>
 </body>
