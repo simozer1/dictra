@@ -111,8 +111,7 @@
 
         let recognition;
         let isRecording = false;
-        // سنستخدم هذا المتغير لحفظ النص الذي تم تأكيده في الجلسات السابقة
-        let previousText = ""; 
+        let lastFinalSentence = ""; // لحفظ آخر جملة نهائية لمنع تكرارها فوراً
 
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         
@@ -123,23 +122,29 @@
 
             recognition.onresult = (event) => {
                 let interimTranscript = "";
-                let currentSessionFinal = "";
-
-                // نقوم بالمرور على جميع النتائج التي أرجعها المتصفح في الجلسة الحالية
-                for (let i = 0; i < event.results.length; ++i) {
-                    const transcript = event.results[i][0].transcript;
+                
+                // نبدأ بمعالجة النتائج من index الحالي
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    let transcript = event.results[i][0].transcript.trim();
+                    
                     if (event.results[i].isFinal) {
-                        currentSessionFinal += transcript + " ";
+                        // حل مشكلة التكرار: التأكد أن الجملة الحالية ليست هي نفسها الأخيرة
+                        if (transcript !== lastFinalSentence) {
+                            // إضافة مسافة قبل النص الجديد إذا كان الصندوق ليس فارغاً
+                            if (resultText.value.length > 0 && !resultText.value.endsWith(" ")) {
+                                resultText.value += " ";
+                            }
+                            resultText.value += transcript;
+                            lastFinalSentence = transcript; // تحديث آخر جملة تمت إضافتها
+                        }
                     } else {
-                        interimTranscript += transcript;
+                        interimTranscript = transcript;
                     }
                 }
-
-                // التحديث: النص القديم + النص النهائي الجديد + النص الذي ما زلت تنطقه الآن
-                resultText.value = previousText + currentSessionFinal + interimTranscript;
                 
-                // تحريك التمرير لأسفل تلقائياً
-                resultText.scrollTop = resultText.scrollHeight;
+                // ملاحظة: لا نضع interimTranscript في value بشكل دائم 
+                // لكي لا يختلط مع النص النهائي. إذا أردت إظهار الكلام أثناء قوله:
+                // statusText.innerText = "جاري الاستماع: " + interimTranscript;
             };
 
             recognition.onstart = () => {
@@ -150,10 +155,8 @@
             };
 
             recognition.onend = () => {
-                // إذا توقف المحرك لسبب ما وكان التسجيل لا يزال فعلاً (مثل الصمت الطويل)
+                // في الأندرويد، يتوقف الميكروفون أحياناً تلقائياً، نعيد تشغيله إذا كان المستخدم لم يضغط "إيقاف"
                 if (isRecording) {
-                    // قبل إعادة التشغيل، نحفظ ما تم كتابته لكي لا يضيع
-                    previousText = resultText.value; 
                     try { recognition.start(); } catch(e) {}
                 } else {
                     recordBtn.classList.remove('recording');
@@ -163,9 +166,7 @@
             };
 
             recognition.onerror = (e) => {
-                console.error("Speech error:", e.error);
-                if(e.error === 'no-speech') showToast("لم يتم اكتشاف صوت");
-                if(e.error === 'not-allowed') showToast("يجب إعطاء صلاحية الميكروفون");
+                if(e.error === 'no-speech') console.log("لا يوجد صوت");
             };
         }
 
@@ -176,11 +177,19 @@
             } else {
                 recognition.lang = langSelect.value;
                 resultText.style.direction = langSelect.value.startsWith('ar') ? 'rtl' : 'ltr';
-                // عند البدء، نعتبر النص الموجود حالياً في المربع هو "النص السابق"
-                previousText = resultText.value; 
+                lastFinalSentence = ""; // تصغير الذاكرة عند بدء تسجيل جديد
                 recognition.start();
             }
         });
+
+        // دوام وظائف النسخ والمسح كما هي
+        function copyToClipboard() {
+            if (!resultText.value.trim()) { showToast("الصندوق فارغ!"); return; }
+            resultText.select();
+            resultText.setSelectionRange(0, 99999);
+            document.execCommand('copy');
+            showToast("تم النسخ بنجاح ✨");
+        }
 
         function showToast(msg) {
             toast.innerText = msg;
@@ -188,28 +197,11 @@
             setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 3000);
         }
 
-        function copyToClipboard() {
-            if (!resultText.value.trim()) { showToast("الصندوق فارغ!"); return; }
-            resultText.select();
-            resultText.setSelectionRange(0, 99999); // للهواتف
-            document.execCommand('copy');
-            showToast("تم النسخ بنجاح ✨");
-        }
-
-        function showConfirm() {
-            document.getElementById('modalOverlay').style.display = 'block';
-            document.getElementById('confirmModal').style.display = 'block';
-        }
-
-        function hideConfirm() {
-            document.getElementById('modalOverlay').style.display = 'none';
-            document.getElementById('confirmModal').style.display = 'none';
-        }
-
         function executeClear() {
             resultText.value = "";
-            previousText = "";
-            hideConfirm();
+            lastFinalSentence = "";
+            document.getElementById('modalOverlay').style.display = 'none';
+            document.getElementById('confirmModal').style.display = 'none';
             showToast("تم مسح النص");
         }
     </script>
