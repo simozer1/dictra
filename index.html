@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dicta PRO - Voice to Text</title>
+    <title>Dicta PRO</title>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -14,15 +14,11 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #0d0d0d;
             color: #f0f0f0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 15px;
-            min-height: 100vh;
+            display: flex; flex-direction: column; align-items: center; padding: 15px; min-height: 100vh;
         }
 
         .app-container { width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 15px; }
-        h1 { text-align: center; font-size: 1.8rem; color: #00d1b2; text-shadow: 0 0 10px rgba(0,209,178,0.3); }
+        h1 { text-align: center; font-size: 1.8rem; color: #00d1b2; text-shadow: 0 0 10px rgba(0,209,178,0.3); margin-top: 10px; }
 
         .record-btn {
             background-color: #00d1b2; color: #0d0d0d; border: none; padding: 20px;
@@ -47,14 +43,13 @@
         .action-btns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
         .action-btn {
             background-color: #222; color: #fff; border: 1px solid #444;
-            padding: 15px; border-radius: 12px; font-size: 0.9rem; cursor: pointer;
+            padding: 15px; border-radius: 12px; font-size: 0.85rem; cursor: pointer;
             display: flex; align-items: center; justify-content: center; gap: 5px;
             font-weight: bold; transition: 0.2s;
         }
-        .action-btn:active { transform: scale(0.92); background: #00d1b2; color: #000; }
 
         #toast {
-            visibility: hidden; min-width: 200px; background-color: #00d1b2; color: #000;
+            visibility: hidden; min-width: 220px; background-color: #00d1b2; color: #000;
             text-align: center; border-radius: 30px; padding: 12px; position: fixed;
             z-index: 1001; bottom: 40px; font-weight: bold; box-shadow: 0 5px 15px rgba(0,0,0,0.5);
         }
@@ -65,62 +60,41 @@
         .modal-btn-confirm { background: #ff3860; color: white; border: none; padding: 12px; border-radius: 10px; cursor: pointer; width: 45%; margin: 5px; font-weight: bold; }
         .modal-btn-cancel { background: #444; color: white; border: none; padding: 12px; border-radius: 10px; cursor: pointer; width: 45%; margin: 5px; }
 
-        #status { text-align: center; font-size: 0.85rem; color: #888; }
-        select { background: #1a1a1a; color: white; border: 1px solid #444; padding: 14px; border-radius: 12px; width: 100%; outline: none; appearance: none; cursor: pointer; text-align: center; }
+        select { background: #1a1a1a; color: white; border: 1px solid #444; padding: 14px; border-radius: 12px; width: 100%; outline: none; text-align: center; margin-bottom: 10px; }
         
-        .lang-container { position: relative; width: 100%; }
-        .lang-container::after { content: "\f107"; font-family: "Font Awesome 5 Free"; font-weight: 900; position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #00d1b2; pointer-events: none; }
-
         @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 40px; opacity: 1;} }
         @keyframes fadeout { from {bottom: 40px; opacity: 1;} to {bottom: 0; opacity: 0;} }
     </style>
 </head>
 <body>
 
-    <div id="toast">تم النسخ بنجاح!</div>
+    <div id="toast">تم النسخ!</div>
     <div id="modalOverlay" class="modal-overlay"></div>
     <div id="confirmModal" class="custom-modal">
         <h3>تأكيد المسح</h3>
-        <p style="color:#888; margin: 15px 0;">هل تريد حقاً مسح النص بالكامل؟ لا يمكن التراجع.</p>
-        <button class="modal-btn-confirm" onclick="executeClear()">مسح الكل</button>
+        <p style="color:#888; margin: 15px 0;">هل تريد مسح النص بالكامل؟</p>
+        <button class="modal-btn-confirm" onclick="executeClear()">نعم</button>
         <button class="modal-btn-cancel" onclick="hideConfirm()">إلغاء</button>
     </div>
 
     <div class="app-container">
         <h1>Dicta <i class="fas fa-microphone-alt"></i></h1>
 
-        <div class="lang-container">
-            <select id="languageSelect">
-                <optgroup label="العربية">
-                    <option value="ar-MA">العربية (المغرب - الدارجة)</option>
-                    <option value="ar-SA" selected>العربية (الفصحى - السعودية)</option>
-                    <option value="ar-EG">العربية (مصر)</option>
-                    <option value="ar-DZ">العربية (الجزائر)</option>
-                    <option value="ar-TN">العربية (تونس)</option>
-                    <option value="ar-LY">العربية (ليبيا)</option>
-                    <option value="ar-IQ">العربية (العراق)</option>
-                    <option value="ar-JO">العربية (الأردن)</option>
-                    <option value="ar-KW">العربية (الكويت)</option>
-                    <option value="ar-LB">العربية (لبنان)</option>
-                    <option value="ar-PS">العربية (فلسطين)</option>
-                    <option value="ar-QA">العربية (قطر)</option>
-                    <option value="ar-SY">العربية (سوريا)</option>
-                    <option value="ar-AE">العربية (الإمارات)</option>
-                </optgroup>
-                <optgroup label="لغات أخرى">
-                    <option value="fr-FR">Français (France)</option>
-                    <option value="en-US">English (United States)</option>
-                    <option value="en-GB">English (United Kingdom)</option>
-                </optgroup>
-            </select>
-        </div>
+        <select id="languageSelect">
+            <optgroup label="العربية">
+                <option value="ar-MA">العربية (المغرب - الدارجة)</option>
+                <option value="ar-SA" selected>العربية (الفصحى)</option>
+                <option value="ar-EG">العربية (مصر)</option>
+                <option value="ar-DZ">العربية (الجزائر)</option>
+            </optgroup>
+            <option value="fr-FR">Français</option>
+            <option value="en-US">English</option>
+        </select>
 
-        <button id="recordBtn" class="record-btn">
-            <i class="fas fa-microphone"></i>
-        </button>
-        <p id="status">اضغط لبدء الإملاء التلقائي</p>
+        <button id="recordBtn" class="record-btn"><i class="fas fa-microphone"></i></button>
+        <p id="status" style="text-align:center; font-size:0.8rem; color:#888;">اضغط لبدء الإملاء</p>
 
-        <textarea id="resultText" placeholder="تحدث بوضوح، سيتم تحويل صوتك إلى نص هنا..."></textarea>
+        <textarea id="resultText" placeholder="تحدث بوضوح..."></textarea>
 
         <div class="action-btns">
             <button onclick="copyToClipboard()" class="action-btn"><i class="fas fa-copy"></i> نسخ</button>
@@ -136,47 +110,49 @@
         const langSelect = document.getElementById('languageSelect');
         const toast = document.getElementById('toast');
 
-        window.SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         let recognition;
         let isRecording = false;
         let finalTranscript = "";
 
-        if (window.SpeechRecognition) {
+        // تهيئة محرك الكلام
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (SpeechRecognition) {
             recognition = new SpeechRecognition();
             recognition.continuous = true;
             recognition.interimResults = true;
 
-            recognition.onstart = () => {
-                isRecording = true;
-                recordBtn.classList.add('recording');
-                recordBtn.innerHTML = '<i class="fas fa-stop"></i>';
-                statusText.innerText = "جاري الاستماع... (اضغط للإيقاف)";
-                
-                // التأكد من جلب النص الموجود حالياً في الصندوق لعدم ضياعه
-                finalTranscript = resultText.value;
-                if (finalTranscript !== "" && !finalTranscript.endsWith(" ")) finalTranscript += " ";
-            };
-
-            recognition.onresult = (e) => {
+            recognition.onresult = (event) => {
                 let interimTranscript = "";
-                for (let i = e.resultIndex; i < e.results.length; i++) {
-                    const transcript = e.results[i][0].transcript;
-                    if (e.results[i].isFinal) {
-                        // حل مشكلة التكرار: لا نكرر الكلمة إذا كانت مطابقة لآخر كلمة مسجلة
-                        if (!finalTranscript.trim().endsWith(transcript.trim())) {
-                            finalTranscript += transcript + " ";
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    const transcriptPiece = event.results[i][0].transcript.trim();
+                    
+                    if (event.results[i].isFinal) {
+                        // الحل الجذري للتكرار: فحص آخر كلمة مضافة فعلياً
+                        let currentWords = finalTranscript.trim().split(/\s+/);
+                        let lastWord = currentWords[currentWords.length - 1];
+                        
+                        if (transcriptPiece !== lastWord) {
+                            finalTranscript += transcriptPiece + " ";
                         }
                     } else {
-                        interimTranscript += transcript;
+                        interimTranscript += transcriptPiece;
                     }
                 }
                 resultText.value = finalTranscript + interimTranscript;
                 resultText.scrollTop = resultText.scrollHeight;
             };
 
+            recognition.onstart = () => {
+                isRecording = true;
+                recordBtn.classList.add('recording');
+                recordBtn.innerHTML = '<i class="fas fa-stop"></i>';
+                statusText.innerText = "جاري الاستماع...";
+                finalTranscript = resultText.value;
+            };
+
             recognition.onend = () => {
                 if (isRecording) {
-                    recognition.start(); // الحفاظ على التسجيل مستمراً
+                    try { recognition.start(); } catch(e) {}
                 } else {
                     recordBtn.classList.remove('recording');
                     recordBtn.innerHTML = '<i class="fas fa-microphone"></i>';
@@ -185,8 +161,8 @@
             };
 
             recognition.onerror = (e) => {
-                console.log("Error: " + e.error);
-                if (e.error === 'network') showToast("يرجى التأكد من الإنترنت!");
+                console.error(e.error);
+                if(e.error === 'no-speech') showToast("لم يتم اكتشاف صوت");
             };
         }
 
@@ -196,7 +172,6 @@
                 recognition.stop();
             } else {
                 recognition.lang = langSelect.value;
-                // ضبط اتجاه النص بناءً على اللغة المختارة
                 resultText.style.direction = langSelect.value.startsWith('ar') ? 'rtl' : 'ltr';
                 recognition.start();
             }
@@ -209,7 +184,7 @@
         }
 
         function copyToClipboard() {
-            if (resultText.value.trim() === "") { showToast("الصندوق فارغ!"); return; }
+            if (!resultText.value) return;
             resultText.select();
             document.execCommand('copy');
             showToast("تم النسخ بنجاح ✨");
@@ -232,14 +207,28 @@
             showToast("تم المسح");
         }
 
+        // إصلاح مشكلة إغلاق التطبيق عند تحميل PDF
         function exportToPDF() {
-            if (resultText.value.trim() === "") { showToast("لا يوجد نص لتحميله!"); return; }
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            const lines = doc.splitTextToSize(resultText.value, 180);
-            doc.text(lines, 10, 10);
-            doc.save("Dicta_Document.pdf");
-            showToast("جاري تحميل الملف...");
+            if (!resultText.value) { showToast("الصندوق فارغ!"); return; }
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                // تقسيم النص لضمان عدم خروجه من الورقة
+                const splitText = doc.splitTextToSize(resultText.value, 180);
+                doc.text(splitText, 10, 10);
+                
+                // استخدام Blob لفتح الملف بدلاً من التنزيل المباشر الذي قد يعطل WebView
+                const pdfBlob = doc.output('blob');
+                const blobUrl = URL.createObjectURL(pdfBlob);
+                
+                // محاولة فتح الملف في نافذة جديدة أو إبلاغ المستخدم
+                window.open(blobUrl, '_blank');
+                showToast("جاري معالجة الملف...");
+            } catch (err) {
+                console.error(err);
+                showToast("حدث خطأ في إنشاء PDF");
+            }
         }
     </script>
 </body>
