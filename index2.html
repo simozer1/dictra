@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dicta PRO</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #0d0d0d;
+            color: #f0f0f0;
+            display: flex; flex-direction: column; align-items: center; padding: 15px; min-height: 100vh;
+        }
+
+        .app-container { width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 15px; }
+        h1 { text-align: center; font-size: 1.8rem; color: #00d1b2; text-shadow: 0 0 10px rgba(0,209,178,0.3); margin-top: 10px; }
+
+        .record-btn {
+            background-color: #00d1b2; color: #0d0d0d; border: none; padding: 20px;
+            border-radius: 50%; font-size: 2.2rem; cursor: pointer; width: 85px; height: 85px;
+            margin: 10px auto; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 0 20px rgba(0,209,178,0.2); transition: 0.3s;
+        }
+        .record-btn.recording { background-color: #ff3860; animation: pulse 1.2s infinite; color: white; }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 56, 96, 0.7); }
+            70% { box-shadow: 0 0 0 20px rgba(255, 56, 96, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 56, 96, 0); }
+        }
+
+        textarea {
+            width: 100%; height: 380px; background-color: #1a1a1a; color: #ffffff;
+            border: 1px solid #333; border-radius: 15px; padding: 18px; font-size: 1.15rem;
+            resize: none; line-height: 1.7; outline: none; border-bottom: 4px solid #00d1b2;
+        }
+
+        /* تعديل تقسيم الأزرار لتصبح زرين فقط بشكل متناسق */
+        .action-btns { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .action-btn {
+            background-color: #222; color: #fff; border: 1px solid #444;
+            padding: 15px; border-radius: 12px; font-size: 1rem; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            font-weight: bold; transition: 0.2s;
+        }
+        .action-btn:active { transform: scale(0.95); background: #333; }
+
+        #toast {
+            visibility: hidden; min-width: 220px; background-color: #00d1b2; color: #000;
+            text-align: center; border-radius: 30px; padding: 12px; position: fixed;
+            z-index: 1001; bottom: 40px; font-weight: bold; box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        }
+        #toast.show { visibility: visible; animation: fadein 0.5s, fadeout 0.5s 2.5s; }
+
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; }
+        .custom-modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #1a1a1a; padding: 25px; z-index: 1001; width: 85%; border-radius: 20px; text-align: center; border: 1px solid #00d1b2; }
+        .modal-btn-confirm { background: #ff3860; color: white; border: none; padding: 12px; border-radius: 10px; cursor: pointer; width: 45%; margin: 5px; font-weight: bold; }
+        .modal-btn-cancel { background: #444; color: white; border: none; padding: 12px; border-radius: 10px; cursor: pointer; width: 45%; margin: 5px; }
+
+        select { background: #1a1a1a; color: white; border: 1px solid #444; padding: 14px; border-radius: 12px; width: 100%; outline: none; text-align: center; margin-bottom: 10px; font-size: 1rem; }
+        
+        @keyframes fadein { from {bottom: 0; opacity: 0;} to {bottom: 40px; opacity: 1;} }
+        @keyframes fadeout { from {bottom: 40px; opacity: 1;} to {bottom: 0; opacity: 0;} }
+    </style>
+</head>
+<body>
+
+    <div id="toast">تم النسخ!</div>
+    <div id="modalOverlay" class="modal-overlay"></div>
+    <div id="confirmModal" class="custom-modal">
+        <h3>تأكيد المسح</h3>
+        <p style="color:#888; margin: 15px 0;">هل تريد مسح النص بالكامل؟</p>
+        <button class="modal-btn-confirm" onclick="executeClear()">نعم</button>
+        <button class="modal-btn-cancel" onclick="hideConfirm()">إلغاء</button>
+    </div>
+
+    <div class="app-container">
+        <h1>Dicta <i class="fas fa-microphone-alt"></i></h1>
+
+        <select id="languageSelect">
+            <optgroup label="العربية">
+                <option value="ar-MA">العربية (المغرب - الدارجة)</option>
+                <option value="ar-SA" selected>العربية (الفصحى)</option>
+                <option value="ar-EG">العربية (مصر)</option>
+                <option value="ar-DZ">العربية (الجزائر)</option>
+            </optgroup>
+            <option value="fr-FR">Français</option>
+            <option value="en-US">English</option>
+        </select>
+
+        <button id="recordBtn" class="record-btn"><i class="fas fa-microphone"></i></button>
+        <p id="status" style="text-align:center; font-size:0.8rem; color:#888;">اضغط لبدء الإملاء</p>
+
+<textarea id="resultText" placeholder="النص سيظهر هنا..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
+
+        <div class="action-btns">
+            <button onclick="copyToClipboard()" class="action-btn"><i class="fas fa-copy"></i> نسخ النص</button>
+            <button onclick="showConfirm()" class="action-btn" style="color:#ff3860; border-color:#ff3860;"><i class="fas fa-trash"></i> مسح الكل</button>
+        </div>
+    </div>
+<script>
+        const recordBtn = document.getElementById('recordBtn');
+        const resultText = document.getElementById('resultText');
+        const statusText = document.getElementById('status');
+        const langSelect = document.getElementById('languageSelect');
+        const toast = document.getElementById('toast');
+
+        let recognition;
+        let isRecording = false;
+        let lastFinalSentence = ""; // لحفظ آخر جملة نهائية لمنع تكرارها فوراً
+
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        
+        if (SpeechRecognition) {
+            recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+
+            recognition.onresult = (event) => {
+                let interimTranscript = "";
+                
+                // نبدأ بمعالجة النتائج من index الحالي
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    let transcript = event.results[i][0].transcript.trim();
+                    
+                    if (event.results[i].isFinal) {
+                        // حل مشكلة التكرار: التأكد أن الجملة الحالية ليست هي نفسها الأخيرة
+                        if (transcript !== lastFinalSentence) {
+                            // إضافة مسافة قبل النص الجديد إذا كان الصندوق ليس فارغاً
+                            if (resultText.value.length > 0 && !resultText.value.endsWith(" ")) {
+                                resultText.value += " ";
+                            }
+                            resultText.value += transcript;
+                            lastFinalSentence = transcript; // تحديث آخر جملة تمت إضافتها
+                        }
+                    } else {
+                        interimTranscript = transcript;
+                    }
+                }
+                
+                // ملاحظة: لا نضع interimTranscript في value بشكل دائم 
+                // لكي لا يختلط مع النص النهائي. إذا أردت إظهار الكلام أثناء قوله:
+                // statusText.innerText = "جاري الاستماع: " + interimTranscript;
+            };
+
+            recognition.onstart = () => {
+                isRecording = true;
+                recordBtn.classList.add('recording');
+                recordBtn.innerHTML = '<i class="fas fa-stop"></i>';
+                statusText.innerText = "جاري الاستماع الآن...";
+            };
+
+            recognition.onend = () => {
+                // في الأندرويد، يتوقف الميكروفون أحياناً تلقائياً، نعيد تشغيله إذا كان المستخدم لم يضغط "إيقاف"
+                if (isRecording) {
+                    try { recognition.start(); } catch(e) {}
+                } else {
+                    recordBtn.classList.remove('recording');
+                    recordBtn.innerHTML = '<i class="fas fa-microphone"></i>';
+                    statusText.innerText = "توقف الإملاء.";
+                }
+            };
+
+            recognition.onerror = (e) => {
+                if(e.error === 'no-speech') console.log("لا يوجد صوت");
+            };
+        }
+
+        recordBtn.addEventListener('click', () => {
+            if (isRecording) {
+                isRecording = false;
+                recognition.stop();
+            } else {
+                recognition.lang = langSelect.value;
+                resultText.style.direction = langSelect.value.startsWith('ar') ? 'rtl' : 'ltr';
+                lastFinalSentence = ""; // تصغير الذاكرة عند بدء تسجيل جديد
+                recognition.start();
+            }
+        });
+
+        // دوام وظائف النسخ والمسح كما هي
+        function copyToClipboard() {
+            if (!resultText.value.trim()) { showToast("الصندوق فارغ!"); return; }
+            resultText.select();
+            resultText.setSelectionRange(0, 99999);
+            document.execCommand('copy');
+            showToast("تم النسخ بنجاح ✨");
+        }
+
+        function showToast(msg) {
+            toast.innerText = msg;
+            toast.className = "show";
+            setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 3000);
+        }
+
+        function executeClear() {
+            resultText.value = "";
+            lastFinalSentence = "";
+            document.getElementById('modalOverlay').style.display = 'none';
+            document.getElementById('confirmModal').style.display = 'none';
+            showToast("تم مسح النص");
+        }
+    </script>
+</body>
+</html>
