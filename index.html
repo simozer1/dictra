@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Quick Dictate - محول الكلام للنصوص</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <style>
+        /* CSS Reset & General Styles */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent; /* Disable tap highlight on mobile */
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #121212; /* Dark Mode Background */
+            color: #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* Container for all elements */
+        .app-container {
+            width: 100%;
+            max-width: 500px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Title Area */
+        h1 {
+            text-align: center;
+            font-size: 1.5rem;
+            color: #bb86fc; /* Accent Color */
+            margin-bottom: 10px;
+        }
+
+        /* The Main Recording Button */
+        .record-btn {
+            background-color: #3700b3;
+            color: white;
+            border: none;
+            padding: 20px;
+            border-radius: 50%;
+            font-size: 2rem;
+            cursor: pointer;
+            width: 80px;
+            height: 80px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .record-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Glowing Animation when Recording */
+        .record-btn.recording {
+            background-color: #cf6679; /* Reddish for recording */
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(207, 102, 121, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 15px rgba(207, 102, 121, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(207, 102, 121, 0);
+            }
+        }
+
+        /* Text Area Container */
+        .text-area-container {
+            position: relative;
+        }
+
+        textarea {
+            width: 100%;
+            height: 300px;
+            background-color: #1e1e1e;
+            color: #e0e0e0;
+            border: 1px solid #333;
+            border-radius: 10px;
+            padding: 15px;
+            font-size: 1rem;
+            resize: none;
+            line-height: 1.5;
+            direction: ltr; /* Default to LTR, JS will change for Arabic */
+            text-align: left;
+        }
+
+        textarea:focus {
+            outline: 2px solid #bb86fc;
+            border-color: transparent;
+        }
+
+        /* Language Selector Container */
+        .lang-container {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        select {
+            background-color: #1e1e1e;
+            color: #e0e0e0;
+            border: 1px solid #333;
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        /* Action Buttons Grid */
+        .action-btns {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .action-btn {
+            background-color: #1e1e1e;
+            color: #bb86fc;
+            border: 1px solid #bb86fc;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: background 0.3s ease;
+        }
+
+        .action-btn:active {
+            background-color: #bb86fc;
+            color: #121212;
+        }
+
+        .action-btn.clear {
+            border-color: #cf6679;
+            color: #cf6679;
+        }
+        
+        .action-btn.clear:active {
+            background-color: #cf6679;
+            color: #121212;
+        }
+
+        /* Status Bar */
+        #status {
+            text-align: center;
+            font-size: 0.85rem;
+            color: #888;
+            margin-top: -10px;
+        }
+
+   /* تصميم نافذة تنبيه مخصصة */
+.custom-modal {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #1e1e1e;
+    border: 1px solid #bb86fc;
+    padding: 20px;
+    z-index: 1000;
+    width: 80%;
+    border-radius: 15px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    text-align: center;
+}
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.7);
+    z-index: 999;
+}
+.modal-btn {
+    background: #bb86fc;
+    color: #121212;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    margin-top: 15px;
+    font-weight: bold;
+    cursor: pointer;
+} </style>
+</head>
+<body>
+<div id="modalOverlay" class="modal-overlay"></div>
+<div id="customModal" class="custom-modal">
+    <h3 style="color:#cf6679; margin-bottom:10px;">تنبيه الصلاحيات</h3>
+    <p>يرجى تفعيل الميكروفون من إعدادات الهاتف لتتمكن من استخدام التطبيق.</p>
+    <button class="modal-btn" onclick="closeModal()">حسناً، فهمت</button>
+</div>
+
+    <div class="app-container">
+        <h1>Quick Dictate <i class="fas fa-bolt"></i></h1>
+
+        <div class="lang-container">
+            <select id="languageSelect">
+                <option value="ar-SA">العربية (السعودية)</option>
+                <option value="en-US">English (US)</option>
+                <option value="fr-FR">Français (France)</option>
+            </select>
+        </div>
+
+        <button id="recordBtn" class="record-btn">
+            <i class="fas fa-microphone"></i>
+        </button>
+        
+        <p id="status">جاهز للاستماع...</p>
+
+        <div class="text-area-container">
+            <textarea id="resultText" placeholder="سيظهر النص المحول هنا..."></textarea>
+        </div>
+
+        <div class="action-btns">
+            <button id="copyBtn" class="action-btn">
+                <i class="fas fa-copy"></i> نسخ
+            </button>
+            <button id="pdfBtn" class="action-btn">
+                <i class="fas fa-file-pdf"></i> PDF
+            </button>
+            <button id="clearBtn" class="action-btn clear">
+                <i class="fas fa-trash"></i> مسح
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Check for Web Speech API support
+        window.SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+        if (!window.SpeechRecognition) {
+            alert("عذراً، متصفحك أو هاتفك لا يدعم خاصية تحويل الكلام لنص. يرجى استخدام متصفح حديث.");
+            document.getElementById('status').innerText = "الخاصية غير مدعومة.";
+            document.getElementById('recordBtn').disabled = true;
+        }
+
+        const recognition = new SpeechRecognition();
+        recognition.interimResults = true; // Show results as they are recognized
+        recognition.continuous = true;    // Don't stop when the user pauses
+
+        const recordBtn = document.getElementById('recordBtn');
+        const resultText = document.getElementById('resultText');
+        const langSelect = document.getElementById('languageSelect');
+        const statusText = document.getElementById('status');
+        
+        let isRecording = false;
+
+        // Set initial language and direction
+        updateLanguageDefaults();
+
+        // 1. Handle Recording Button Click
+        recordBtn.addEventListener('click', () => {
+            if (isRecording) {
+                recognition.stop();
+            } else {
+                recognition.lang = langSelect.value;
+                updateLanguageDefaults();
+                recognition.start();
+            }
+        });
+
+        // 2. Process Speech Recognition Results
+        recognition.addEventListener('result', (e) => {
+            const transcript = Array.from(e.results)
+                .map(result => result[0])
+                .map(result => result.transcript)
+                .join('');
+
+            resultText.value = transcript;
+        });
+
+        // 3. Handle Recording State Changes
+        recognition.addEventListener('start', () => {
+            isRecording = true;
+            recordBtn.classList.add('recording');
+            recordBtn.innerHTML = '<i class="fas fa-stop"></i>';
+            statusText.innerText = "جاري الاستماع... (اضغط للتوقف)";
+            statusText.style.color = "#cf6679";
+        });
+
+        recognition.addEventListener('end', () => {
+            isRecording = false;
+            recordBtn.classList.remove('recording');
+            recordBtn.innerHTML = '<i class="fas fa-microphone"></i>';
+            statusText.innerText = "توقف الاستماع. جاهز مرة أخرى.";
+            statusText.style.color = "#888";
+        });
+
+      recognition.addEventListener('error', (e) => {
+            isRecording = false;
+            recordBtn.classList.remove('recording');
+            recordBtn.innerHTML = '<i class="fas fa-microphone"></i>';
+            
+            if (e.error === 'not-allowed' || e.error === 'permission-denied') {
+                // إظهار النافذة المخصصة بدلاً من الرسالة المزعجة
+                document.getElementById('modalOverlay').style.display = 'block';
+                document.getElementById('customModal').style.display = 'block';
+                statusText.innerText = "يرجى تفعيل الصلاحية من الإعدادات.";
+            } else {
+                statusText.innerText = "خطأ: " + e.error;
+            }
+        });
+
+        function closeModal() {
+            document.getElementById('modalOverlay').style.display = 'none';
+            document.getElementById('customModal').style.display = 'none';
+        }
+
+        // 4. Action Buttons Functionality
+
+        // Language Selector Change
+        langSelect.addEventListener('change', updateLanguageDefaults);
+
+        function updateLanguageDefaults() {
+            if (langSelect.value.startsWith('ar')) {
+                resultText.style.direction = 'rtl';
+                resultText.style.textAlign = 'right';
+            } else {
+                resultText.style.direction = 'ltr';
+                resultText.style.textAlign = 'left';
+            }
+        }
+
+        // Copy Text
+        document.getElementById('copyBtn').addEventListener('click', () => {
+            if (resultText.value.trim() === "") {
+                alert("لا يوجد نص لنسخه!");
+                return;
+            }
+            resultText.select();
+            document.execCommand('copy');
+            alert("تم نسخ النص للحافظة!");
+        });
+
+        // Clear Text
+        document.getElementById('clearBtn').addEventListener('click', () => {
+            resultText.value = "";
+        });
+
+        // Export as PDF (uses jsPDF library)
+        document.getElementById('pdfBtn').addEventListener('click', () => {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            if (resultText.value.trim() === "") {
+                alert("لا يوجد نص لتصديره!");
+                return;
+            }
+
+            // Note: Basic jsPDF has limited Arabic support without custom fonts.
+            // This is a simple implementation. For advanced Arabic, a font is needed.
+            
+            // Text padding and formatting
+            const splitText = doc.splitTextToSize(resultText.value, 180);
+            doc.text(splitText, 10, 10);
+            doc.save("QuickDictate_Export.pdf");
+            alert("جاري تحميل ملف PDF...");
+        });
+
+    </script>
+</body>
+</html>
