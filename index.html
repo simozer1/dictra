@@ -102,8 +102,7 @@
             <button onclick="showConfirm()" class="action-btn" style="color:#ff3860; border-color:#ff3860;"><i class="fas fa-trash"></i> مسح الكل</button>
         </div>
     </div>
-
-    <script>
+<script>
         const recordBtn = document.getElementById('recordBtn');
         const resultText = document.getElementById('resultText');
         const statusText = document.getElementById('status');
@@ -112,9 +111,11 @@
 
         let recognition;
         let isRecording = false;
-        let finalTranscript = "";
+        // سنستخدم هذا المتغير لحفظ النص الذي تم تأكيده في الجلسات السابقة
+        let previousText = ""; 
 
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        
         if (SpeechRecognition) {
             recognition = new SpeechRecognition();
             recognition.continuous = true;
@@ -122,21 +123,22 @@
 
             recognition.onresult = (event) => {
                 let interimTranscript = "";
-                for (let i = event.resultIndex; i < event.results.length; ++i) {
-                    const transcriptPiece = event.results[i][0].transcript.trim();
-                    
+                let currentSessionFinal = "";
+
+                // نقوم بالمرور على جميع النتائج التي أرجعها المتصفح في الجلسة الحالية
+                for (let i = 0; i < event.results.length; ++i) {
+                    const transcript = event.results[i][0].transcript;
                     if (event.results[i].isFinal) {
-                        let currentWords = finalTranscript.trim().split(/\s+/);
-                        let lastWord = currentWords[currentWords.length - 1];
-                        
-                        if (transcriptPiece !== lastWord) {
-                            finalTranscript += transcriptPiece + " ";
-                        }
+                        currentSessionFinal += transcript + " ";
                     } else {
-                        interimTranscript += transcriptPiece;
+                        interimTranscript += transcript;
                     }
                 }
-                resultText.value = finalTranscript + interimTranscript;
+
+                // التحديث: النص القديم + النص النهائي الجديد + النص الذي ما زلت تنطقه الآن
+                resultText.value = previousText + currentSessionFinal + interimTranscript;
+                
+                // تحريك التمرير لأسفل تلقائياً
                 resultText.scrollTop = resultText.scrollHeight;
             };
 
@@ -145,11 +147,13 @@
                 recordBtn.classList.add('recording');
                 recordBtn.innerHTML = '<i class="fas fa-stop"></i>';
                 statusText.innerText = "جاري الاستماع الآن...";
-                finalTranscript = resultText.value;
             };
 
             recognition.onend = () => {
+                // إذا توقف المحرك لسبب ما وكان التسجيل لا يزال فعلاً (مثل الصمت الطويل)
                 if (isRecording) {
+                    // قبل إعادة التشغيل، نحفظ ما تم كتابته لكي لا يضيع
+                    previousText = resultText.value; 
                     try { recognition.start(); } catch(e) {}
                 } else {
                     recordBtn.classList.remove('recording');
@@ -159,7 +163,9 @@
             };
 
             recognition.onerror = (e) => {
+                console.error("Speech error:", e.error);
                 if(e.error === 'no-speech') showToast("لم يتم اكتشاف صوت");
+                if(e.error === 'not-allowed') showToast("يجب إعطاء صلاحية الميكروفون");
             };
         }
 
@@ -170,6 +176,8 @@
             } else {
                 recognition.lang = langSelect.value;
                 resultText.style.direction = langSelect.value.startsWith('ar') ? 'rtl' : 'ltr';
+                // عند البدء، نعتبر النص الموجود حالياً في المربع هو "النص السابق"
+                previousText = resultText.value; 
                 recognition.start();
             }
         });
@@ -183,6 +191,7 @@
         function copyToClipboard() {
             if (!resultText.value.trim()) { showToast("الصندوق فارغ!"); return; }
             resultText.select();
+            resultText.setSelectionRange(0, 99999); // للهواتف
             document.execCommand('copy');
             showToast("تم النسخ بنجاح ✨");
         }
@@ -199,7 +208,7 @@
 
         function executeClear() {
             resultText.value = "";
-            finalTranscript = "";
+            previousText = "";
             hideConfirm();
             showToast("تم مسح النص");
         }
