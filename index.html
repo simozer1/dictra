@@ -39,7 +39,6 @@
             resize: none; line-height: 1.7; outline: none; border-bottom: 4px solid #00d1b2;
         }
 
-        /* تعديل تقسيم الأزرار لتصبح زرين فقط بشكل متناسق */
         .action-btns { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
         .action-btn {
             background-color: #222; color: #fff; border: 1px solid #444;
@@ -95,14 +94,15 @@
         <button id="recordBtn" class="record-btn"><i class="fas fa-microphone"></i></button>
         <p id="status" style="text-align:center; font-size:0.8rem; color:#888;">اضغط لبدء الإملاء</p>
 
-<textarea id="resultText" placeholder="النص سيظهر هنا..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
+        <textarea id="resultText" placeholder="النص سيظهر هنا..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
 
         <div class="action-btns">
             <button onclick="copyToClipboard()" class="action-btn"><i class="fas fa-copy"></i> نسخ النص</button>
             <button onclick="showConfirm()" class="action-btn" style="color:#ff3860; border-color:#ff3860;"><i class="fas fa-trash"></i> مسح الكل</button>
         </div>
     </div>
-<script>
+
+    <script>
         const recordBtn = document.getElementById('recordBtn');
         const resultText = document.getElementById('resultText');
         const statusText = document.getElementById('status');
@@ -111,7 +111,7 @@
 
         let recognition;
         let isRecording = false;
-        let lastFinalSentence = ""; // لحفظ آخر جملة نهائية لمنع تكرارها فوراً
+        let lastFinalSentence = ""; 
 
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         
@@ -122,29 +122,20 @@
 
             recognition.onresult = (event) => {
                 let interimTranscript = "";
-                
-                // نبدأ بمعالجة النتائج من index الحالي
                 for (let i = event.resultIndex; i < event.results.length; ++i) {
                     let transcript = event.results[i][0].transcript.trim();
-                    
                     if (event.results[i].isFinal) {
-                        // حل مشكلة التكرار: التأكد أن الجملة الحالية ليست هي نفسها الأخيرة
                         if (transcript !== lastFinalSentence) {
-                            // إضافة مسافة قبل النص الجديد إذا كان الصندوق ليس فارغاً
                             if (resultText.value.length > 0 && !resultText.value.endsWith(" ")) {
                                 resultText.value += " ";
                             }
                             resultText.value += transcript;
-                            lastFinalSentence = transcript; // تحديث آخر جملة تمت إضافتها
+                            lastFinalSentence = transcript; 
                         }
                     } else {
                         interimTranscript = transcript;
                     }
                 }
-                
-                // ملاحظة: لا نضع interimTranscript في value بشكل دائم 
-                // لكي لا يختلط مع النص النهائي. إذا أردت إظهار الكلام أثناء قوله:
-                // statusText.innerText = "جاري الاستماع: " + interimTranscript;
             };
 
             recognition.onstart = () => {
@@ -155,7 +146,6 @@
             };
 
             recognition.onend = () => {
-                // في الأندرويد، يتوقف الميكروفون أحياناً تلقائياً، نعيد تشغيله إذا كان المستخدم لم يضغط "إيقاف"
                 if (isRecording) {
                     try { recognition.start(); } catch(e) {}
                 } else {
@@ -177,12 +167,29 @@
             } else {
                 recognition.lang = langSelect.value;
                 resultText.style.direction = langSelect.value.startsWith('ar') ? 'rtl' : 'ltr';
-                lastFinalSentence = ""; // تصغير الذاكرة عند بدء تسجيل جديد
+                lastFinalSentence = ""; 
                 recognition.start();
             }
         });
 
-        // دوام وظائف النسخ والمسح كما هي
+        // وظائف زر المسح المضافة للإصلاح
+        function showConfirm() {
+            document.getElementById('modalOverlay').style.display = 'block';
+            document.getElementById('confirmModal').style.display = 'block';
+        }
+
+        function hideConfirm() {
+            document.getElementById('modalOverlay').style.display = 'none';
+            document.getElementById('confirmModal').style.display = 'none';
+        }
+
+        function executeClear() {
+            resultText.value = "";
+            lastFinalSentence = "";
+            hideConfirm();
+            showToast("تم مسح النص");
+        }
+
         function copyToClipboard() {
             if (!resultText.value.trim()) { showToast("الصندوق فارغ!"); return; }
             resultText.select();
@@ -195,14 +202,6 @@
             toast.innerText = msg;
             toast.className = "show";
             setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 3000);
-        }
-
-        function executeClear() {
-            resultText.value = "";
-            lastFinalSentence = "";
-            document.getElementById('modalOverlay').style.display = 'none';
-            document.getElementById('confirmModal').style.display = 'none';
-            showToast("تم مسح النص");
         }
     </script>
 </body>
