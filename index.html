@@ -9,6 +9,12 @@
 
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        
+        /* Smooth transition for theme toggling */
+        body, textarea, select, .action-btn, .custom-modal, .theme-toggle {
+            transition: background-color 0.4s ease, color 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease;
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #0d0d0d;
@@ -16,21 +22,53 @@
             display: flex; flex-direction: column; align-items: center; padding: 15px; min-height: 100vh;
         }
 
-        .app-container { width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 15px; }
-        h1 { text-align: center; font-size: 1.8rem; color: #00d1b2; text-shadow: 0 0 10px rgba(0,209,178,0.3); margin-top: 10px; }
+        /* Light Mode Styles */
+        body.light-mode { background-color: #f0f4f8; color: #1a1a1a; }
+        body.light-mode h1 { color: #00a88f; text-shadow: 0 0 10px rgba(0, 168, 143, 0.2); }
+        body.light-mode textarea { background-color: #ffffff; color: #1a1a1a; border-color: #d1d9e6; border-bottom: 4px solid #00a88f; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        body.light-mode select { background-color: #ffffff; color: #1a1a1a; border-color: #d1d9e6; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        body.light-mode .action-btn { background-color: #ffffff; color: #333; border-color: #d1d9e6; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        body.light-mode .action-btn:active { background-color: #e2e8f0; }
+        body.light-mode .custom-modal { background-color: #ffffff; border-color: #00a88f; color: #1a1a1a; }
+        body.light-mode #status { color: #555 !important; }
+        
+        .app-container { width: 100%; max-width: 500px; display: flex; flex-direction: column; gap: 15px; position: relative; }
+        
+        /* Theme Toggle Switch */
+        .theme-toggle {
+            position: absolute;
+            top: 5px;
+            left: 0;
+            background: none;
+            border: none;
+            color: #00d1b2;
+            font-size: 1.5rem;
+            cursor: pointer;
+            z-index: 10;
+        }
+        body.light-mode .theme-toggle { color: #00a88f; }
+
+        h1 { text-align: center; font-size: 1.8rem; color: #00d1b2; text-shadow: 0 0 10px rgba(0,209,178,0.3); margin-top: 10px; transition: color 0.4s, text-shadow 0.4s;}
 
         .record-btn {
             background-color: #00d1b2; color: #0d0d0d; border: none; padding: 20px;
             border-radius: 50%; font-size: 2.2rem; cursor: pointer; width: 85px; height: 85px;
             margin: 10px auto; display: flex; align-items: center; justify-content: center;
-            box-shadow: 0 0 20px rgba(0,209,178,0.2); transition: 0.3s;
+            box-shadow: 0 0 20px rgba(0,209,178,0.2); transition: transform 0.2s ease;
         }
-        .record-btn.recording { background-color: #ff3860; animation: pulse 1.2s infinite; color: white; }
+        
+        /* Neon RGB Glow Animation for Recording State */
+        .record-btn.recording { 
+            animation: rgbNeonGlow 2.5s linear infinite; 
+            color: white; 
+        }
 
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(255, 56, 96, 0.7); }
-            70% { box-shadow: 0 0 0 20px rgba(255, 56, 96, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(255, 56, 96, 0); }
+        @keyframes rgbNeonGlow {
+            0% { box-shadow: 0 0 15px #ff0055, 0 0 30px #ff0055, inset 0 0 10px #ff0055; background-color: #ff0055; }
+            25% { box-shadow: 0 0 15px #bf00ff, 0 0 30px #bf00ff, inset 0 0 10px #bf00ff; background-color: #bf00ff; }
+            50% { box-shadow: 0 0 15px #00d1b2, 0 0 30px #00d1b2, inset 0 0 10px #00d1b2; background-color: #00d1b2; }
+            75% { box-shadow: 0 0 15px #ffaa00, 0 0 30px #ffaa00, inset 0 0 10px #ffaa00; background-color: #ffaa00; }
+            100% { box-shadow: 0 0 15px #ff0055, 0 0 30px #ff0055, inset 0 0 10px #ff0055; background-color: #ff0055; }
         }
 
         textarea {
@@ -44,7 +82,7 @@
             background-color: #222; color: #fff; border: 1px solid #444;
             padding: 15px; border-radius: 12px; font-size: 1rem; cursor: pointer;
             display: flex; align-items: center; justify-content: center; gap: 8px;
-            font-weight: bold; transition: 0.2s;
+            font-weight: bold; 
         }
         .action-btn:active { transform: scale(0.95); background: #333; }
 
@@ -78,6 +116,11 @@
     </div>
 
     <div class="app-container">
+        <!-- Theme Toggle Button -->
+        <button class="theme-toggle" onclick="toggleTheme()" title="Toggle Light/Dark Mode">
+            <i class="fas fa-sun"></i>
+        </button>
+
         <h1>Dicta <i class="fas fa-microphone-alt"></i></h1>
 
         <select id="languageSelect">
@@ -97,8 +140,9 @@
         <textarea id="resultText" placeholder="النص سيظهر هنا..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
 
         <div class="action-btns">
-            <button onclick="copyToClipboard()" class="action-btn"><i class="fas fa-copy"></i> نسخ النص</button>
-            <button onclick="showConfirm()" class="action-btn" style="color:#ff3860; border-color:#ff3860;"><i class="fas fa-trash"></i> مسح الكل</button>
+            <!-- Buttons renamed to English -->
+            <button onclick="copyToClipboard()" class="action-btn"><i class="fas fa-copy"></i> Copy</button>
+            <button onclick="showConfirm()" class="action-btn" style="color:#ff3860; border-color:#ff3860;"><i class="fas fa-trash"></i> Delete</button>
         </div>
     </div>
 
@@ -202,6 +246,22 @@
             toast.innerText = msg;
             toast.className = "show";
             setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 3000);
+        }
+
+        // Theme Toggle Logic
+        function toggleTheme() {
+            const body = document.body;
+            const icon = document.querySelector('.theme-toggle i');
+            
+            body.classList.toggle('light-mode');
+            
+            if (body.classList.contains('light-mode')) {
+                icon.classList.remove('fa-sun');
+                icon.classList.add('fa-moon');
+            } else {
+                icon.classList.remove('fa-moon');
+                icon.classList.add('fa-sun');
+            }
         }
     </script>
 </body>
