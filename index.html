@@ -264,106 +264,108 @@
             }
         }
     </script>
-      <!-- Smart Counter Feature: Words and Characters -->
-<div id="smartCounter">
-    <div class="counter-item">
-        <span class="counter-label">WORDS</span>
-        <b id="wordCount">0</b>
-    </div>
-    <div class="counter-divider"></div>
-    <div class="counter-item">
-        <span class="counter-label">CHARS</span>
-        <b id="charCount">0</b>
-    </div>
-</div>
-
+      <!-- Smart Counter Internal Integration (Words & Characters) -->
 <style>
-    /* Elegant floating bar styling */
-    #smartCounter {
-        position: fixed;
-        bottom: 25px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: rgba(20, 20, 20, 0.65); /* Semi-transparent */
-        backdrop-filter: blur(12px); /* Glassmorphism effect */
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(0, 209, 178, 0.25);
-        padding: 10px 28px;
-        border-radius: 100px;
-        color: #00d1b2;
-        font-family: 'Courier New', Courier, monospace; /* Technical feel */
+    /* Container created via JS to hold textarea and counter */
+    .dicta-internal-wrapper {
+        position: relative;
+        width: 100%;
         display: flex;
-        align-items: center;
-        gap: 20px;
-        z-index: 1000;
-        box-shadow: 0 12px 35px rgba(0,0,0,0.4);
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        pointer-events: none; /* Allows clicks to pass through if needed */
+        flex-direction: column;
     }
 
-    /* Light mode adaptation */
-    body.light-mode #smartCounter {
-        background: rgba(255, 255, 255, 0.75);
-        border-color: rgba(0, 168, 143, 0.2);
-        color: #008f7a;
-        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-    }
-
-    .counter-item {
+    /* The modern internal counter bar */
+    #smartCounterInternal {
+        position: absolute;
+        bottom: 12px;
+        left: 20px;
+        right: 20px;
         display: flex;
+        justify-content: space-between;
         align-items: center;
-        gap: 10px;
-    }
-
-    .counter-label {
+        pointer-events: none; /* User can click through to the textarea */
+        font-family: 'JetBrains Mono', 'Courier New', monospace;
+        text-transform: uppercase;
         font-size: 10px;
-        letter-spacing: 2px;
-        opacity: 0.6;
-        font-weight: bold;
+        letter-spacing: 1px;
+        opacity: 0.35;
+        transition: opacity 0.3s ease, color 0.4s ease;
+        z-index: 10;
     }
 
-    .counter-divider {
-        width: 1px;
-        height: 18px;
-        background: currentColor;
-        opacity: 0.2;
+    /* Highlight counter when the user is typing */
+    .dicta-internal-wrapper:focus-within #smartCounterInternal {
+        opacity: 0.9;
     }
 
-    #smartCounter b {
-        font-size: 1.1rem;
-        font-weight: 700;
-        min-width: 25px;
-        text-align: center;
+    /* Typography for the numbers */
+    #smartCounterInternal b {
+        font-size: 14px;
+        font-weight: 800;
+        margin-left: 4px;
+    }
+
+    .smart-stats-group {
+        display: flex;
+        gap: 15px;
+    }
+
+    /* Theme color adaptation */
+    body:not(.light-mode) #smartCounterInternal { color: #00d1b2; }
+    body.light-mode #smartCounterInternal { color: #00a88f; }
+
+    /* Adjusting textarea padding so text doesn't overlap the counter */
+    #resultText {
+        padding-bottom: 45px !important;
     }
 </style>
 
 <script>
     (function() {
-        const targetTextarea = document.getElementById('resultText');
-        const wordEl = document.getElementById('wordCount');
-        const charEl = document.getElementById('charCount');
+        const textarea = document.getElementById('resultText');
+        if (!textarea) return;
 
-        function updateSmartCounter() {
-            if (!targetTextarea) return;
+        // 1. Create a wrapper to enable absolute positioning inside
+        const wrapper = document.createElement('div');
+        wrapper.className = 'dicta-internal-wrapper';
+        
+        // 2. Inject the wrapper into the original structure
+        textarea.parentNode.insertBefore(wrapper, textarea);
+        wrapper.appendChild(textarea);
+
+        // 3. Create the UI element for the counter
+        const counter = document.createElement('div');
+        counter.id = 'smartCounterInternal';
+        counter.innerHTML = `
+            <div class="smart-stats-group">
+                <span>Words <b id="internalWords">0</b></span>
+                <span>Chars <b id="internalChars">0</b></span>
+            </div>
+            <div style="font-style: italic; opacity: 0.5;">Smart Counter v1.0</div>
+        `;
+        wrapper.appendChild(counter);
+
+        const wordDisplay = document.getElementById('internalWords');
+        const charDisplay = document.getElementById('internalChars');
+
+        function updateCounts() {
+            const textContent = textarea.value.trim();
+            // Calculate words accurately
+            const words = textContent ? textContent.split(/\s+/).length : 0;
             
-            const content = targetTextarea.value.trim();
-            
-            // Calculate words (handling multiple spaces/newlines)
-            const words = content ? content.split(/\s+/).length : 0;
-            
-            // Update UI
-            wordEl.innerText = words;
-            charEl.innerText = targetTextarea.value.length;
+            // Sync with UI
+            wordDisplay.innerText = words;
+            charDisplay.innerText = textarea.value.length;
         }
 
-        // Trigger on manual typing
-        targetTextarea.addEventListener('input', updateSmartCounter);
+        // Real-time listener for keyboard input
+        textarea.addEventListener('input', updateCounts);
 
-        // Trigger periodically for dictation (since voice updates happen via script)
-        setInterval(updateSmartCounter, 400);
+        // Timer-based check to catch updates from the voice recognition script
+        setInterval(updateCounts, 400);
         
-        // Initial call
-        updateSmartCounter();
+        // Initial sync
+        updateCounts();
     })();
 </script>
 </body>
