@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>المترجم الصوتي الفوري</title>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* Reset & Base Variables */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    :root {
+      --primary: #00d2aa;
+      --primary-hover: #00e5ba;
+      --primary-glow: rgba(0, 210, 170, 0.4);
+      --bg: #0b0c0f;
+      --card-bg: #15171d;
+      --card-header: #121419;
+      --card-border: #292d38;
+      --input-bg: #181a20;
+      --input-border: #2b2f3a;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --danger: #f87171;
+      --danger-bg: rgba(248, 113, 113, 0.1);
+      --danger-border: rgba(248, 113, 113, 0.3);
+    }
+
+    html.light {
+      --primary: #00b894;
+      --primary-hover: #00d2aa;
+      --primary-glow: rgba(0, 184, 148, 0.3);
+      --bg: #f4f6f9;
+      --card-bg: #ffffff;
+      --card-header: #f8fafc;
+      --card-border: #e2e8f0;
+      --input-bg: #ffffff;
+      --input-border: #cbd5e1;
+      --text: #0f172a;
+      --text-muted: #475569;
+      --text-dim: #94a3b8;
+      --danger: #ef4444;
+      --danger-bg: #fef2f2;
+      --danger-border: #fecaca;
+    }
+
+    body {
+      font-family: 'Cairo', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 12px;
+      transition: background-color 0.3s ease, color 0.3s ease;
+      line-height: 1.5;
+    }
+
+    .app-container {
+      width: 100%;
+      max-width: 520px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding-bottom: 24px;
+    }
+
+    /* Top Bar (Theme Toggle) */
+    .top-bar {
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      width: 100%;
+      padding: 2px 4px;
+    }
+
+    .theme-toggle-btn {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      color: var(--text);
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 18px;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    }
+
+    .theme-toggle-btn:hover {
+      border-color: var(--primary);
+      transform: scale(1.05);
+    }
+
+    /* Language Selection Section */
+    .lang-section {
+      background-color: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 14px;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: flex-end;
+      gap: 8px;
+    }
+
+    .lang-control {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .lang-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .lang-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background-color: var(--primary);
+    }
+
+    .select-wrapper {
+      position: relative;
+    }
+
+    .lang-select {
+      width: 100%;
+      appearance: none;
+      background-color: var(--input-bg);
+      border: 1px solid var(--input-border);
+      color: var(--text);
+      padding: 10px 12px;
+      padding-left: 28px;
+      border-radius: 14px;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      outline: none;
+      transition: all 0.2s ease;
+    }
+
+    .lang-select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px var(--primary-glow);
+    }
+
+    .select-arrow {
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      pointer-events: none;
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+
+    .swap-btn {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background-color: var(--input-bg);
+      border: 1px solid var(--card-border);
+      color: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      margin-bottom: 2px;
+      transition: all 0.2s ease;
+    }
+
+    .swap-btn:hover {
+      transform: scale(1.08);
+      border-color: var(--primary);
+    }
+
+    .swap-btn:active {
+      transform: scale(0.92);
+    }
+
+    /* Microphone Section */
+    .mic-section {
+      background-color: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 22px 14px 18px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    .mic-btn-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .mic-pulse-ring {
+      display: none;
+      position: absolute;
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background-color: var(--primary-glow);
+      animation: micPulse 1.5s infinite cubic-bezier(0.4, 0, 0.6, 1);
+    }
+
+    @keyframes micPulse {
+      0% { transform: scale(0.85); opacity: 0.8; }
+      100% { transform: scale(1.4); opacity: 0; }
+    }
+
+    .mic-button {
+      position: relative;
+      z-index: 2;
+      width: 90px;
+      height: 90px;
+      border-radius: 50%;
+      background-color: var(--primary);
+      color: #0c0d10;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 0 24px var(--primary-glow);
+      transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .mic-button:hover {
+      transform: scale(1.06);
+    }
+
+    .mic-button:active {
+      transform: scale(0.94);
+    }
+
+    .mic-button svg {
+      width: 42px;
+      height: 42px;
+      fill: currentColor;
+    }
+
+    .is-listening .mic-pulse-ring {
+      display: block;
+    }
+
+    .is-listening .mic-button {
+      background-color: #ff4757;
+      box-shadow: 0 0 30px rgba(255, 71, 87, 0.6);
+      color: #ffffff;
+    }
+
+    .mic-status-text {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    .is-listening .mic-status-text {
+      color: var(--primary);
+    }
+
+    /* Waveform visualizer */
+    .waveform-container {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      height: 20px;
+    }
+
+    .is-listening .waveform-container {
+      display: flex;
+    }
+
+    .wave-bar {
+      width: 3px;
+      height: 6px;
+      background-color: var(--primary);
+      border-radius: 3px;
+      animation: wave 0.8s ease-in-out infinite alternate;
+    }
+
+    .wave-bar:nth-child(1) { animation-delay: 0.1s; height: 8px; }
+    .wave-bar:nth-child(2) { animation-delay: 0.2s; height: 16px; }
+    .wave-bar:nth-child(3) { animation-delay: 0.3s; height: 22px; }
+    .wave-bar:nth-child(4) { animation-delay: 0.4s; height: 14px; }
+    .wave-bar:nth-child(5) { animation-delay: 0.5s; height: 20px; }
+    .wave-bar:nth-child(6) { animation-delay: 0.2s; height: 12px; }
+
+    @keyframes wave {
+      0% { transform: scaleY(0.4); }
+      100% { transform: scaleY(1.4); }
+    }
+
+    /* Text Cards */
+    .cards-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .transcript-card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    }
+
+    .card-header {
+      background-color: var(--card-header);
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--card-border);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .card-title-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-badge {
+      background-color: var(--input-bg);
+      border: 1px solid var(--card-border);
+      color: var(--text-muted);
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+    }
+
+    .card-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .icon-action-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .icon-action-btn:hover {
+      background-color: var(--input-bg);
+      color: var(--text);
+    }
+
+    .card-body {
+      padding: 14px;
+      min-height: 140px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .text-area {
+      width: 100%;
+      min-height: 100px;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 16px;
+      line-height: 1.6;
+      resize: none;
+      font-weight: 500;
+    }
+
+    .text-area::placeholder {
+      color: var(--text-dim);
+    }
+
+    .card-footer {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text-dim);
+      padding-top: 8px;
+      border-top: 1px solid var(--card-border);
+    }
+
+    .card-indicator {
+      height: 4px;
+      width: 100%;
+      background-color: var(--card-border);
+      transition: all 0.3s ease;
+    }
+
+    .has-content .card-indicator {
+      background-color: var(--primary);
+      box-shadow: 0 0 10px var(--primary);
+    }
+
+    /* Action Buttons (Bottom Bar) */
+    .action-bar {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 4px;
+    }
+
+    .action-btn {
+      padding: 14px;
+      border-radius: 16px;
+      font-family: inherit;
+      font-size: 15px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: 1px solid transparent;
+    }
+
+    .action-btn:active {
+      transform: scale(0.97);
+    }
+
+    .clear-btn {
+      background-color: var(--input-bg);
+      border-color: var(--danger-border);
+      color: var(--danger);
+    }
+
+    .clear-btn:hover {
+      background-color: var(--danger-bg);
+    }
+
+    .copy-btn {
+      background-color: var(--input-bg);
+      border-color: var(--card-border);
+      color: var(--text);
+    }
+
+    .copy-btn:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    /* Modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(4px);
+      z-index: 999;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .modal-card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      padding: 24px;
+      max-width: 400px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    }
+
+    .modal-card h3 {
+      margin: 12px 0 8px;
+      font-size: 18px;
+    }
+
+    .modal-card p {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+      line-height: 1.6;
+    }
+
+    .modal-close-btn {
+      width: 100%;
+      padding: 12px;
+      border-radius: 12px;
+      background-color: var(--primary);
+      color: #0c0d10;
+      font-weight: 800;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container" id="appContainer">
+    
+    <!-- Top Bar (Theme Toggle Only) -->
+    <div class="top-bar">
+      <button class="theme-toggle-btn" id="themeBtn" title="تبديل الوضع">🌙</button>
+    </div>
+
+    <!-- Language Selector Dropdowns -->
+    <section class="lang-section">
+      <!-- Input Language -->
+      <div class="lang-control">
+        <label class="lang-label">
+          <span class="lang-dot"></span>
+          لغة التحدث
+        </label>
+        <div class="select-wrapper">
+          <select id="inputLangSelect" class="lang-select">
+            <option value="en">🇺🇸 English</option>
+            <option value="ar" selected>🇸🇦 العربية</option>
+            <option value="fr">🇫🇷 Français</option>
+            <option value="es">🇪🇸 Español</option>
+          </select>
+          <span class="select-arrow">▼</span>
+        </div>
+      </div>
+
+      <!-- Swap Button -->
+      <button class="swap-btn" id="swapLangBtn" title="تبديل اللغات">⇄</button>
+
+      <!-- Output Language -->
+      <div class="lang-control">
+        <label class="lang-label">
+          <span>🌐</span>
+          الترجمة إلى
+        </label>
+        <div class="select-wrapper">
+          <select id="outputLangSelect" class="lang-select">
+            <option value="en" selected>🇺🇸 English</option>
+            <option value="ar">🇸🇦 العربية</option>
+            <option value="fr">🇫🇷 Français</option>
+            <option value="es">🇪🇸 Español</option>
+          </select>
+          <span class="select-arrow">▼</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Microphone Section -->
+    <section class="mic-section" id="micSection">
+      <div class="mic-btn-wrapper">
+        <div class="mic-pulse-ring"></div>
+        <button class="mic-button" id="micBtn" title="اضغط لبدء التحدث">
+          <svg viewBox="0 0 24 24" id="micIcon">
+            <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+            <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="mic-status-text" id="micStatusText">اضغط لبدء الإملاء</div>
+
+      <!-- Audio Wave Visualizer Animation -->
+      <div class="waveform-container">
+        <div class="wave-bar"></div>
+        <div class="wave-bar"></div>
+        <div class="wave-bar"></div>
+        <div class="wave-bar"></div>
+        <div class="wave-bar"></div>
+        <div class="wave-bar"></div>
+      </div>
+    </section>
+
+    <!-- Original & Translated Cards -->
+    <div class="cards-wrapper">
+      
+      <!-- Original Card -->
+      <div class="transcript-card" id="origCard">
+        <div class="card-header">
+          <div class="card-title-group">
+            <span>🎤 النص الأصلي</span>
+            <span class="card-badge" id="origBadge">العربية</span>
+          </div>
+          <div class="card-actions">
+            <button class="icon-action-btn" id="ttsOrigBtn" title="نطق النص">🔊</button>
+            <button class="icon-action-btn" id="copyOrigBtn" title="نسخ النص">📋</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <textarea id="origTextArea" class="text-area" placeholder="النص سيظهر هنا . . ."></textarea>
+          <div class="card-footer">
+            <span id="origDirStatus">RTL</span>
+            <span id="origStats">0 كلمة</span>
+          </div>
+        </div>
+        <div class="card-indicator"></div>
+      </div>
+
+      <!-- Translated Card -->
+      <div class="transcript-card" id="transCard">
+        <div class="card-header">
+          <div class="card-title-group">
+            <span>✨ النص المترجم</span>
+            <span class="card-badge" id="transBadge">English</span>
+          </div>
+          <div class="card-actions">
+            <button class="icon-action-btn" id="ttsTransBtn" title="نطق النص">🔊</button>
+            <button class="icon-action-btn" id="copyTransBtn" title="نسخ النص">📋</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <textarea id="transTextArea" class="text-area" placeholder="الترجمة الفورية ستظهر هنا . . ."></textarea>
+          <div class="card-footer">
+            <span id="transDirStatus">LTR</span>
+            <span id="transStats">0 كلمة</span>
+          </div>
+        </div>
+        <div class="card-indicator"></div>
+      </div>
+
+    </div>
+
+    <!-- Bottom Action Bar -->
+    <div class="action-bar">
+      <button class="action-btn clear-btn" id="clearAllBtn">
+        <span>🗑️</span>
+        <span>مسح الكل</span>
+      </button>
+      <button class="action-btn copy-btn" id="copyAllBtn">
+        <span>📋</span>
+        <span>نسخ النص</span>
+      </button>
+    </div>
+
+  </div>
+
+  <!-- Permission Modal -->
+  <div class="modal-overlay" id="permModal">
+    <div class="modal-card">
+      <div style="font-size: 34px;">🛡️</div>
+      <h3>حل مشكلة إذن الميكروفون</h3>
+      <p id="permModalMsg">يرجى السماح بالوصول إلى الميكروفون للتمكن من تحويل صوتك إلى نصوص فورية.</p>
+
+      <!-- Hardware Test Box -->
+      <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--card-border); border-radius: 14px; padding: 10px; margin-bottom: 14px; text-align: right;">
+        <div style="font-size: 11px; font-weight: bold; margin-bottom: 6px; color: var(--primary);">
+          اختبار الميكروفون المباشر (Hardware Test):
+        </div>
+        <button id="testMicDirectBtn" style="width: 100%; padding: 8px; border-radius: 10px; background: var(--primary); color: #0c0d10; font-weight: bold; font-size: 12px; border: none; cursor: pointer;">
+          طلب إذن الميكروفون الآن 🎙️
+        </button>
+        <div id="testMicFeedback" style="display: none; margin-top: 8px; font-size: 11px; padding: 6px; border-radius: 8px;"></div>
+      </div>
+
+      <!-- AppCreator Instructions -->
+      <div style="background: rgba(0, 210, 170, 0.05); border: 1px solid rgba(0, 210, 170, 0.2); border-radius: 14px; padding: 12px; margin-bottom: 16px; text-align: right; font-size: 11px; line-height: 1.6;">
+        <strong style="color: var(--primary);">في لوحة تحكم AppCreator24:</strong><br>
+        1. افتح <strong>Sections (الأقسام)</strong> واضغط تعديل على هذا القسم.<br>
+        2. غيّر خيار <strong>«Allow access to camera/microphone»</strong> إلى <strong>Yes (نعم)</strong>.<br>
+        3. في <strong>General Info</strong> تأكد من تفعيل إذن الميكروفون.<br>
+        4. تأكد من تفعيل خدمات Google الصوتية في هاتفك.
+      </div>
+
+      <button class="modal-close-btn" id="closeModalBtn">فهمت، إغلاق النافذة</button>
+    </div>
+  </div>
+
+  <!-- Full JavaScript Logic -->
+  <script>
+    (function() {
+      const htmlEl = document.documentElement;
+      const themeBtn = document.getElementById('themeBtn');
+      const inputLangSelect = document.getElementById('inputLangSelect');
+      const outputLangSelect = document.getElementById('outputLangSelect');
+      const swapLangBtn = document.getElementById('swapLangBtn');
+      const micSection = document.getElementById('micSection');
+      const micBtn = document.getElementById('micBtn');
+      const micStatusText = document.getElementById('micStatusText');
+      const origTextArea = document.getElementById('origTextArea');
+      const transTextArea = document.getElementById('transTextArea');
+      const origCard = document.getElementById('origCard');
+      const transCard = document.getElementById('transCard');
+      const origBadge = document.getElementById('origBadge');
+      const transBadge = document.getElementById('transBadge');
+      const origStats = document.getElementById('origStats');
+      const transStats = document.getElementById('transStats');
+      const clearAllBtn = document.getElementById('clearAllBtn');
+      const copyAllBtn = document.getElementById('copyAllBtn');
+      const ttsOrigBtn = document.getElementById('ttsOrigBtn');
+      const ttsTransBtn = document.getElementById('ttsTransBtn');
+      const copyOrigBtn = document.getElementById('copyOrigBtn');
+      const copyTransBtn = document.getElementById('copyTransBtn');
+      const permModal = document.getElementById('permModal');
+      const permModalMsg = document.getElementById('permModalMsg');
+      const closeModalBtn = document.getElementById('closeModalBtn');
+      const testMicDirectBtn = document.getElementById('testMicDirectBtn');
+      const testMicFeedback = document.getElementById('testMicFeedback');
+
+      // Languages configuration
+      const LANG_CONFIG = {
+        ar: { name: 'العربية', speechCode: 'ar-SA', dir: 'rtl' },
+        en: { name: 'English', speechCode: 'en-US', dir: 'ltr' },
+        fr: { name: 'Français', speechCode: 'fr-FR', dir: 'ltr' },
+        es: { name: 'Español', speechCode: 'es-ES', dir: 'ltr' }
+      };
+
+      let isListening = false;
+      let recognition = null;
+      let translateTimeout = null;
+
+      // Direct Hardware Permission helper
+      async function requestHardwareMic() {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          return { ok: true };
+        }
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          stream.getTracks().forEach(function(t) { t.stop(); });
+          return { ok: true };
+        } catch (e) {
+          return { ok: false, error: e.message || 'Permission denied' };
+        }
+      }
+
+      if (testMicDirectBtn) {
+        testMicDirectBtn.addEventListener('click', async function() {
+          testMicDirectBtn.textContent = 'جاري الاختبار...';
+          testMicDirectBtn.disabled = true;
+          const res = await requestHardwareMic();
+          testMicDirectBtn.disabled = false;
+          testMicDirectBtn.textContent = 'طلب إذن الميكروفون الآن 🎙️';
+          testMicFeedback.style.display = 'block';
+          if (res.ok) {
+            testMicFeedback.style.background = 'rgba(16, 185, 129, 0.2)';
+            testMicFeedback.style.color = '#34d399';
+            testMicFeedback.textContent = '✅ نجح الاتصال بالمايك! تم منح الإذن بنجاح.';
+          } else {
+            testMicFeedback.style.background = 'rgba(239, 68, 68, 0.2)';
+            testMicFeedback.style.color = '#f87171';
+            testMicFeedback.textContent = '❌ تم الرفض! تأكد من تفعيل "Allow camera/mic" في إعدادات القسم بـ AppCreator24.';
+          }
+        });
+      }
+
+      // Theme Management
+      function initTheme() {
+        const saved = localStorage.getItem('dicta_theme');
+        if (saved === 'light') {
+          htmlEl.classList.remove('dark');
+          htmlEl.classList.add('light');
+          themeBtn.textContent = '☀️';
+        } else {
+          htmlEl.classList.remove('light');
+          htmlEl.classList.add('dark');
+          themeBtn.textContent = '🌙';
+        }
+      }
+
+      themeBtn.addEventListener('click', () => {
+        const isDark = htmlEl.classList.contains('dark');
+        if (isDark) {
+          htmlEl.classList.remove('dark');
+          htmlEl.classList.add('light');
+          themeBtn.textContent = '☀️';
+          localStorage.setItem('dicta_theme', 'light');
+        } else {
+          htmlEl.classList.remove('light');
+          htmlEl.classList.add('dark');
+          themeBtn.textContent = '🌙';
+          localStorage.setItem('dicta_theme', 'dark');
+        }
+      });
+
+      // Update UI texts & direction
+      function updateUI() {
+        const inCode = inputLangSelect.value;
+        const outCode = outputLangSelect.value;
+
+        origBadge.textContent = LANG_CONFIG[inCode].name;
+        transBadge.textContent = LANG_CONFIG[outCode].name;
+
+        origTextArea.dir = LANG_CONFIG[inCode].dir;
+        transTextArea.dir = LANG_CONFIG[outCode].dir;
+
+        document.getElementById('origDirStatus').textContent = LANG_CONFIG[inCode].dir.toUpperCase();
+        document.getElementById('transDirStatus').textContent = LANG_CONFIG[outCode].dir.toUpperCase();
+
+        const origWords = origTextArea.value.trim() ? origTextArea.value.trim().split(/\s+/).length : 0;
+        const transWords = transTextArea.value.trim() ? transTextArea.value.trim().split(/\s+/).length : 0;
+
+        origStats.textContent = origWords + ' كلمة';
+        transStats.textContent = transWords + ' كلمة';
+
+        if (origTextArea.value.trim()) origCard.classList.add('has-content');
+        else origCard.classList.remove('has-content');
+
+        if (transTextArea.value.trim()) transCard.classList.add('has-content');
+        else transCard.classList.remove('has-content');
+      }
+
+      // Translation Engine
+      async function translate(text, fromLang, toLang) {
+        if (!text || !text.trim()) {
+          transTextArea.value = '';
+          updateUI();
+          return;
+        }
+        if (fromLang === toLang) {
+          transTextArea.value = text;
+          updateUI();
+          return;
+        }
+
+        try {
+          const url = 'https://api.mymemory.translated.net/get?q=' + encodeURIComponent(text.trim()) + '&langpair=' + fromLang + '|' + toLang;
+          const res = await fetch(url);
+          if (res.ok) {
+            const data = await res.json();
+            if (data && data.responseData && data.responseData.translatedText) {
+              transTextArea.value = data.responseData.translatedText;
+              updateUI();
+              return;
+            }
+          }
+        } catch (e) {
+          console.warn('Translation network error, using fallback');
+        }
+
+        transTextArea.value = '[' + toLang.toUpperCase() + '] ' + text;
+        updateUI();
+      }
+
+      // Input Event
+      origTextArea.addEventListener('input', () => {
+        updateUI();
+        clearTimeout(translateTimeout);
+        translateTimeout = setTimeout(() => {
+          translate(origTextArea.value, inputLangSelect.value, outputLangSelect.value);
+        }, 500);
+      });
+
+      // Swap Languages
+      swapLangBtn.addEventListener('click', () => {
+        const curIn = inputLangSelect.value;
+        const curOut = outputLangSelect.value;
+        inputLangSelect.value = curOut;
+        outputLangSelect.value = curIn;
+
+        const curOrig = origTextArea.value;
+        const curTrans = transTextArea.value;
+        origTextArea.value = curTrans;
+        transTextArea.value = curOrig;
+
+        updateUI();
+      });
+
+      inputLangSelect.addEventListener('change', () => {
+        updateUI();
+        if (origTextArea.value) {
+          translate(origTextArea.value, inputLangSelect.value, outputLangSelect.value);
+        }
+      });
+
+      outputLangSelect.addEventListener('change', () => {
+        updateUI();
+        if (origTextArea.value) {
+          translate(origTextArea.value, inputLangSelect.value, outputLangSelect.value);
+        }
+      });
+
+      // Speech Recognition
+      function initSpeechRecognition() {
+        const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRec) {
+          showModal('متصفحك لا يدعم التعرف على الصوت عبر الويب (Web Speech API). يرجى فتح التطبيق في Google Chrome.');
+          return null;
+        }
+
+        const rec = new SpeechRec();
+        rec.continuous = true;
+        rec.interimResults = true;
+        rec.lang = LANG_CONFIG[inputLangSelect.value].speechCode;
+
+        rec.onstart = function() {
+          isListening = true;
+          micSection.classList.add('is-listening');
+          micStatusText.textContent = 'جاري الاستماع... تحدث الآن';
+        };
+
+        rec.onresult = function(event) {
+          let interimTranscript = '';
+          let finalTranscript = '';
+
+          for (let i = event.resultIndex; i < event.results.length; ++i) {
+            if (event.results[i].isFinal) {
+              finalTranscript += event.results[i][0].transcript + ' ';
+            } else {
+              interimTranscript += event.results[i][0].transcript;
+            }
+          }
+
+          const fullText = finalTranscript || interimTranscript;
+          if (fullText.trim()) {
+            origTextArea.value = fullText.trim();
+            updateUI();
+
+            clearTimeout(translateTimeout);
+            translateTimeout = setTimeout(() => {
+              translate(origTextArea.value, inputLangSelect.value, outputLangSelect.value);
+            }, 300);
+          }
+        };
+
+        rec.onerror = function(event) {
+          stopRecording();
+          if (event.error === 'not-allowed') {
+            showModal('تم رفض إذن الميكروفون. في AppCreator24 تأكد من تفعيل "Allow access to camera/microphone" في إعدادات القسم.');
+          } else if (event.error === 'no-speech') {
+            micStatusText.textContent = 'لم يتم سماع صوت، حاول مجدداً';
+          }
+        };
+
+        rec.onend = function() {
+          stopRecording();
+        };
+
+        return rec;
+      }
+
+      async function startRecording() {
+        if (window.speechSynthesis) window.speechSynthesis.cancel();
+        
+        // Request hardware permission directly first
+        const hw = await requestHardwareMic();
+        if (!hw.ok) {
+          showModal('تم رفض الإذن بالوصول للميكروفون من التطبيق. في AppCreator24 تأكد من تفعيل "Allow access to camera/microphone" في إعدادات القسم.');
+          return;
+        }
+
+        recognition = initSpeechRecognition();
+        if (recognition) {
+          try {
+            recognition.start();
+          } catch (e) {
+            console.error(e);
+            stopRecording();
+          }
+        }
+      }
+
+      function stopRecording() {
+        isListening = false;
+        micSection.classList.remove('is-listening');
+        micStatusText.textContent = 'اضغط لبدء الإملاء';
+        if (recognition) {
+          try { recognition.stop(); } catch(e){}
+          recognition = null;
+        }
+      }
+
+      micBtn.addEventListener('click', () => {
+        if (isListening) {
+          stopRecording();
+        } else {
+          startRecording();
+        }
+      });
+
+      // Text-To-Speech (Audio Playback)
+      function speak(text, langCode) {
+        if (!('speechSynthesis' in window)) return;
+        window.speechSynthesis.cancel();
+        if (!text || !text.trim()) return;
+
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = LANG_CONFIG[langCode].speechCode;
+        utterance.rate = 0.95;
+        window.speechSynthesis.speak(utterance);
+      }
+
+      ttsOrigBtn.addEventListener('click', () => speak(origTextArea.value, inputLangSelect.value));
+      ttsTransBtn.addEventListener('click', () => speak(transTextArea.value, outputLangSelect.value));
+
+      // Clipboard operations
+      function copyToClipboard(text, btnElement) {
+        if (!text) return;
+        navigator.clipboard.writeText(text).then(() => {
+          const origContent = btnElement.innerHTML;
+          btnElement.innerHTML = '✅';
+          setTimeout(() => { btnElement.innerHTML = origContent; }, 1500);
+        });
+      }
+
+      copyOrigBtn.addEventListener('click', () => copyToClipboard(origTextArea.value, copyOrigBtn));
+      copyTransBtn.addEventListener('click', () => copyToClipboard(transTextArea.value, copyTransBtn));
+
+      copyAllBtn.addEventListener('click', () => {
+        const text = transTextArea.value || origTextArea.value;
+        if (text) copyToClipboard(text, copyAllBtn);
+      });
+
+      clearAllBtn.addEventListener('click', () => {
+        stopRecording();
+        origTextArea.value = '';
+        transTextArea.value = '';
+        updateUI();
+      });
+
+      // Modal helpers
+      function showModal(msg) {
+        permModalMsg.textContent = msg;
+        permModal.style.display = 'flex';
+      }
+
+      closeModalBtn.addEventListener('click', () => {
+        permModal.style.display = 'none';
+      });
+
+      // Init
+      initTheme();
+      updateUI();
+    })();
+  </script>
+</body>
+</html>
